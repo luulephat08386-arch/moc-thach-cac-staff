@@ -1,33 +1,18 @@
-<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mộc Thạch Các – Kiểm thử đăng nhập nhân viên</title>
-<style>
-:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#26332d;background:#f5f3ee}*{box-sizing:border-box}body{margin:0}header{padding:28px 18px;background:#244332;color:#fff}main{max-width:640px;padding:20px;margin:auto}.panel{background:white;padding:24px;border-radius:16px;border:1px solid #dddcd2;box-shadow:0 8px 20px #16321c0b}h1{font-size:24px;margin:0 0 8px}h2{font-size:19px;margin:0 0 12px}.sub{color:#e0e9dd;margin:0}p{line-height:1.55}.note{font-size:14px;color:#59695e}.status{padding:12px;border-radius:9px;background:#f1f4ef}.error{background:#fff0ec;color:#942d1b}.ok{background:#edf7ee;color:#175c2d}button{border:none;border-radius:9px;padding:11px 16px;background:#244332;color:white;cursor:pointer}button:disabled{opacity:.5}#logout{display:none;margin-top:18px}#googleButton{min-height:42px;margin:16px 0}
-</style><script src="config.js"></script><script src="https://accounts.google.com/gsi/client" async defer></script></head>
-<body><header><main><h1>Mộc Thạch Các</h1><p class="sub">Cổng nhân viên – kiểm thử đăng nhập Google V0.3.6</p></main></header><main><section class="panel"><h2>Kiểm tra đăng nhập trên GitHub Pages</h2><p class="note">Bước này chỉ kiểm tra Google Sign-In có chạy trên đúng tên miền hay không. Chưa kết nối Google Sheets và chưa cấp quyền xem/sửa công việc.</p><p id="status" class="status" role="status">Đang khởi tạo…</p><div id="googleButton"></div><button id="logout" type="button">Đăng xuất khỏi bản thử nghiệm</button><p class="note">Không nhập mật khẩu tại website này. Không dán Client Secret hoặc ID Token vào GitHub.</p></section></main>
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mộc Thạch Các · Cổng nhân viên</title>
+<style>body{margin:0;font:16px system-ui,sans-serif;background:#f4f1ea;color:#233f30}header{background:#213e2f;color:white;padding:20px 5%}main{max-width:760px;margin:25px auto;padding:0 16px}.panel{background:white;border-radius:16px;padding:22px;box-shadow:0 1px 8px #0001;margin-bottom:15px}button,select,textarea{font:inherit;padding:10px;max-width:100%;box-sizing:border-box}button{background:#254632;color:white;border:0;border-radius:7px;cursor:pointer}button:disabled{opacity:.5}label{display:block;margin:12px 0 5px}article{border-top:1px solid #ddd;padding:14px 0}small{color:#63756b}.err{color:#a32323}.status{white-space:pre-wrap}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}textarea{width:100%}h1{margin:0;font-size:24px}</style>
+<script src="config.js"></script><script src="https://accounts.google.com/gsi/client" async defer></script></head>
+<body><header><h1>Mộc Thạch Các</h1><div>Cổng nhân viên · Thử nghiệm V0.3.6 – 2C</div></header><main><section class="panel"><h2>Đăng nhập Google</h2><p>Chỉ xem và cập nhật công việc đã giao. Không nhập mật khẩu Google tại trang này.</p><div id="googleBtn"></div><p id="notice" class="status" role="status"></p><div class="row"><button id="refresh" hidden>Làm mới công việc</button><button id="signout" hidden>Đăng xuất</button></div></section><section class="panel" id="work" hidden><h2 id="greet"></h2><div id="tasks"></div></section><section class="panel"><small>Chưa dùng cho nhân viên thật trước khi đạt kiểm thử quyền truy cập. Không chia sẻ ID Token hoặc Client Secret.</small></section></main>
 <script>
 'use strict';
-const statusEl = document.getElementById('status');
-const logout = document.getElementById('logout');
-function status(message,type=''){statusEl.textContent=message;statusEl.className='status '+type;}
-function handleCredential(response){
-  // Chỉ xác nhận trình duyệt đã nhận credential; tuyệt đối không ghi log/lưu/gửi token.
-  if(!response || typeof response.credential!=='string' || !response.credential){status('Google không trả kết quả đăng nhập.','error');return;}
-  status('ĐÃ NHẬN ID TOKEN TỪ GOOGLE. Kiểm thử origin thành công. CHƯA xác thực token tại backend và CHƯA cấp quyền truy cập công việc.','ok');
-  logout.style.display='inline-block';
-}
-function initialize(){
-  const clientId=window.MTC_STAFF_CONFIG && window.MTC_STAFF_CONFIG.clientId;
-  if(!clientId || clientId.startsWith('DIEN_') || !clientId.endsWith('.apps.googleusercontent.com')){
-    status('Chưa cấu hình Client ID hợp lệ trong config.js.','error');return;
-  }
-  if(!window.google?.accounts?.id){status('Không tải được Google Identity Services. Kiểm tra mạng, trình duyệt hoặc tiện ích chặn theo dõi.','error');return;}
-  try{
-    google.accounts.id.initialize({client_id:clientId,callback:handleCredential,auto_select:false});
-    google.accounts.id.renderButton(document.getElementById('googleButton'),{type:'standard',theme:'outline',size:'large',text:'signin_with'});
-    status('Sẵn sàng kiểm thử. Nhấn Đăng nhập bằng Google.');
-  }catch(e){status('Không khởi tạo được Google Sign-In: '+e.message,'error');}
-}
-logout.onclick=()=>{google?.accounts?.id?.disableAutoSelect();logout.style.display='none';status('Đã xóa trạng thái đăng nhập tại trang thử nghiệm. Muốn thoát tài khoản Google, hãy thực hiện tại Google.');};
-window.addEventListener('load',initialize);
+const cfg=window.MTC_STAFF_CONFIG||{};let googleToken='';const $=id=>document.getElementById(id);
+function note(msg,error=false){$('notice').textContent=msg;$('notice').className='status'+(error?' err':'');}
+function endpoint(){let u=String(cfg.apiBase||'').replace(/\/$/,'');if(!/^https:\/\/[^/]+\.run\.app$/.test(u))throw Error('Chưa điền Cloud Run URL hợp lệ trong config.js');return u;}
+async function api(route,payload){if(!googleToken)throw Error('Vui lòng đăng nhập lại');const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),25000);try{const response=await fetch(endpoint()+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:googleToken,...payload}),signal:ctl.signal});const json=await response.json();if(!response.ok||!json.ok)throw Error(json.error||'Yêu cầu không thành công');return json;}finally{clearTimeout(timer);}}
+async function refresh(){note('Đang tải công việc...');$('tasks').replaceChildren();try{const res=await api('/api/tasks',{});$('work').hidden=false;$('greet').textContent='Xin chào, '+res.name;for(const task of res.tasks)renderTask(task);if(!res.tasks.length){const p=document.createElement('p');p.textContent='Chưa có công việc được giao.';$('tasks').append(p);}note('Đã tải '+res.tasks.length+' công việc.');}catch(e){$('work').hidden=true;note(e.message,true);}}
+function node(tag,text){let n=document.createElement(tag);n.textContent=text;return n;}
+function renderTask(t){const a=document.createElement('article');a.append(node('h3',t.title),node('p',t.description||''),node('small',`${t.id} • ${t.priority} • Hạn: ${t.dueDate||'Chưa đặt'} • ${t.status}`));const select=document.createElement('select');for(const v of ['Đang thực hiện','Chờ phản hồi','Hoàn thành']){let opt=node('option',v);opt.value=v;select.append(opt);}select.value=['Đang thực hiện','Chờ phản hồi','Hoàn thành'].includes(t.status)?t.status:'Đang thực hiện';const comment=document.createElement('textarea');comment.maxLength=500;comment.rows=2;comment.placeholder='Ghi chú tiến độ (không bắt buộc)';const save=node('button','Cập nhật');save.disabled=['Hoàn thành','Đã hủy'].includes(t.status);save.onclick=async()=>{save.disabled=true;note('Đang lưu công việc...');try{await api('/api/update',{taskId:t.id,status:select.value,note:comment.value});await refresh();}catch(e){note(e.message,true);save.disabled=false;}};a.append(node('label','Cập nhật trạng thái'),select,comment,save);$('tasks').append(a);}
+function loggedIn(credential){googleToken=credential; $('refresh').hidden=false;$('signout').hidden=false; refresh();}
+$('refresh').onclick=refresh;$('signout').onclick=()=>{googleToken='';$('work').hidden=true;$('refresh').hidden=true;$('signout').hidden=true;note('Đã thoát khỏi cổng nhân viên.');if(window.google?.accounts?.id)google.accounts.id.disableAutoSelect();};
+function waitForGoogle(retry=0){if(!cfg.clientId||!/^\d+-[\w-]+\.apps\.googleusercontent\.com$/.test(cfg.clientId)){note('Chưa cấu hình Client ID hợp lệ trong config.js',true);return;}if(!window.google?.accounts?.id){if(retry<35)setTimeout(()=>waitForGoogle(retry+1),200);else note('Không tải được Google Sign-In',true);return;}google.accounts.id.initialize({client_id:cfg.clientId,callback:r=>{if(r?.credential)loggedIn(r.credential);else note('Không nhận được phiên Google',true);}});google.accounts.id.renderButton($('googleBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'vi'});note('Chưa đăng nhập.');}
+waitForGoogle();
 </script></body></html>
